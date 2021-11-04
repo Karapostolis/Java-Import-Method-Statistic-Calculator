@@ -151,14 +151,14 @@ public class Main {
 
         String CWD = System.getProperty("user.dir");
         
-        String cmd_Command="cd " + FILE_PATH3+" | mvn dependency:copy-dependencies -DoutputDirectory="+CWD+"\\target\\lib";
+        String cmd_Command="cd " + FILE_PATH3+" & mvn dependency:copy-dependencies -DexcludeTransitive -DoutputDirectory="+CWD+"\\target\\lib";
         
         CMD(cmd_Command);
         
         String cmd2 ="dir /a:-d /s /b "+CWD + "\\target\\lib"+" | find /c \":\" ";
         
         CMD(cmd2);
-                
+              
     }
     
 }
