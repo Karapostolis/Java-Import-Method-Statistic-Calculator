@@ -16,11 +16,7 @@
             <artifactId>javaparser-symbol-solver-core</artifactId>
             <version>3.18.0</version>
         </dependency>
-        <dependency>
-            <groupId>io.dropwizard.metrics</groupId>
-            <artifactId>metrics-core</artifactId>
-            <version>4.1.12.1</version>
-        </dependency>
+        
     </dependencies>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
