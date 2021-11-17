@@ -16,6 +16,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import javax.swing.text.Document;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -30,6 +31,84 @@ import org.xml.sax.SAXException;
 
 
 public class Main {
+    
+    
+    
+    
+    
+    //statik metablites stous metrites gia methodous kai bibliothikes
+         public  static int i=0,i2=0;
+        //metrame to plithos toon methodon kai toon biblhothikon
+
+        private static class MethodNamePrinter extends VoidVisitorAdapter<Void> {
+        @Override
+        public void visit(MethodDeclaration md, Void arg) {
+        super.visit(md, arg);
+        i++;
+        //System.out.println("Method Name Printed: " + md.getName()); 
+        }
+        @Override
+        public void visit(ImportDeclaration md, Void arg) {
+        super.visit(md, arg);
+        i2++;
+        //System.out.println("Library Name Printed: " + md.getName());
+        }
+ }
+        //emafanizoume to plhthos ton methodon kai ton bibliothikon
+
+        public static void count(){
+            System.out.println("Number of methods: "+i);
+            System.out.println("Number of libraries: "+i2);
+        }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    static ArrayList<String> Source_Paths = new ArrayList<String>();
+   
+    
+    
+    
+    
+    
+    public static void listFilesForFolder(final File folder2) {
+
+    for (final File fileEntry : folder2.listFiles()) {
+        if (fileEntry.isDirectory()) {
+            listFilesForFolder(fileEntry);
+        } else {
+
+            if(test(fileEntry.getName(), ".java")){
+                Source_Paths.add(fileEntry.getPath());
+               //System.out.println(fileEntry.getPath());
+            }
+
+        }
+    }
+}
+
+    public static boolean test(String a, String b) {
+    if (a.length() > 5) {
+        a = a.substring(a.length() - 5);
+        if (b.length() > 4) {
+            b = b.substring(b.length() - 5);
+        }
+    }
+    return a.equals(b);
+}
+    
+    
+    
+    
   
 
 
@@ -117,12 +196,14 @@ public class Main {
     
     
     
-    private static final String FILE_PATH = "E:\\randomStuff\\Ptyxiaki\\Κωδικας\\src\\main\\java\\calculator\\MetricsFilter.java";
+    private static final String FILE_PATH = "E:\\randomStuff\\Ptyxiaki\\Code\\src\\main\\java\\calculator\\MetricsFilter.java";
     
     
     private static final String FILE_PATH2="E:/Mathimata/Netbeens_Projects/Ptyxiaki/src/main/java/com/mycompany/ptyxiaki/Example.java";
     
     private static final String FILE_PATH3="C:\\Netbeans_Project\\mavenproject1";
+    
+     private static final String FILE_PATH4="C:\\Netbeans_Project\\Ptyxiaki\\target\\lib\\sources";
     
     
     
@@ -158,6 +239,51 @@ public class Main {
         String cmd2 ="dir /a:-d /s /b "+CWD + "\\target\\lib"+" | find /c \":\" ";
         
         CMD(cmd2);
+        
+        String cmd3 = "cd "+FILE_PATH3 + " & mvn dependency:copy-dependencies -Dclassifier=sources -DexcludeTransitive -DoutputDirectory="+CWD+"\\target\\lib\\sources";
+        
+        CMD(cmd3);
+        
+        File folder = new File(FILE_PATH4);
+        File[] listOfFiles = folder.listFiles();
+
+
+        for (int i = 0; i < listOfFiles.length; i++) {
+            String cmd4="cd "+FILE_PATH4 +" & jar xf "+listOfFiles[i].getName();
+            CMD(cmd4);
+            //
+
+        }
+        
+        
+        final File folder2 = new File(FILE_PATH4);
+        listFilesForFolder(folder2);
+        
+        
+        
+        
+        
+        //Gets the Source_Paths
+        
+        for (int i=0; i<Source_Paths.size();i++)
+        {
+            
+            CompilationUnit cu3 = StaticJavaParser.parse(new File(Source_Paths.get(i)));
+            //System.out.println(cu3);
+            
+            VoidVisitor<Void> methodNameVisitor = new MethodNamePrinter();
+            methodNameVisitor.visit(cu, null);
+            
+            
+        }
+        count();
+        
+        
+        
+        
+        
+        
+        
               
     }
     
