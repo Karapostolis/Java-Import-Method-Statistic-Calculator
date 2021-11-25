@@ -5,18 +5,38 @@
  */
 package com.mycompany.ptyxiaki;
 
+import com.github.javaparser.ParserConfiguration;
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.ImportDeclaration;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.MethodDeclaration;
+import com.github.javaparser.ast.expr.BinaryExpr;
+import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.visitor.VoidVisitor;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
+import com.github.javaparser.symbolsolver.JavaSymbolSolver;
+import com.github.javaparser.symbolsolver.model.resolution.TypeSolver;
+import com.github.javaparser.symbolsolver.resolution.typesolvers.CombinedTypeSolver;
+import com.github.javaparser.symbolsolver.resolution.typesolvers.JavaParserTypeSolver;
+import com.github.javaparser.symbolsolver.resolution.typesolvers.ReflectionTypeSolver;
+import com.github.javaparser.symbolsolver.utils.SymbolSolverCollectionStrategy;
+import com.github.javaparser.utils.ProjectRoot;
+import com.github.javaparser.utils.SourceRoot;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.reflect.Method;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import javax.swing.text.Document;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -32,10 +52,59 @@ import org.xml.sax.SAXException;
 
 public class Main {
     
+    // Checks if the elements of the Array List you are giving as a parameter exist in the newList and if it doesn't it adds it in the newList
+    public static <T> ArrayList<T> removeDuplicates(ArrayList<T> list)
+    {
+        ArrayList<T> newList = new ArrayList<T>();
+        for (T element : list) {
+
+            if (!newList.contains(element)) {
+                newList.add(element);
+            }
+        }
+        return newList;
+    }
     
     
+    // Initialise Static ArrayList arm
+    static ArrayList<String> arm = new ArrayList<String>();
+    
+    // It gives the variable arm all the methods that exist in the Java file that you are parsing
+    
+    private static class MethodVisitor extends VoidVisitorAdapter
+    {
+        @Override
+        public void visit(MethodCallExpr methodCall, Object arg)
+        {
+
+
+            arm.add(methodCall.getName().asString());
+
+            List<Expression> args = methodCall.getArguments();
+            if (args != null)
+                handleExpressions(args);
+
+        }
+    
+
+        private void handleExpressions(List<Expression> expressions)
+        {
+            for (Expression expr : expressions)
+            {
+                if (expr instanceof MethodCallExpr)
+                    visit((MethodCallExpr) expr, null);
+                else if (expr instanceof BinaryExpr)
+                {
+                    BinaryExpr binExpr = (BinaryExpr)expr;
+                    handleExpressions(Arrays.asList(binExpr.getLeft(), binExpr.getRight()));
+                }
+            }
+        }
+        
+    }
     
     
+   
     //statik metablites stous metrites gia methodous kai bibliothikes
          public  static int i=0,i2=0;
         //metrame to plithos toon methodon kai toon biblhothikon
@@ -56,9 +125,10 @@ public class Main {
  }
         //emafanizoume to plhthos ton methodon kai ton bibliothikon
 
-        public static void count(){
-            System.out.println("Number of methods: "+i);
-            System.out.println("Number of libraries: "+i2);
+        public static int count(){
+            //System.out.println("Number of methods: "+i);
+            //System.out.println("Number of libraries: "+i2);
+            return i;
         }
     
     
@@ -79,7 +149,7 @@ public class Main {
     
     
     
-    
+    // Scans all the project and adds into the ArrayList Source_Paths all the paths of the Java files 
     public static void listFilesForFolder(final File folder2) {
 
     for (final File fileEntry : folder2.listFiles()) {
@@ -171,7 +241,7 @@ public class Main {
     }
 } 
     
-    
+    // This method enables us to run cmd commands in windows
     public static void CMD(String cmd)
     {
         String[] command =
@@ -254,18 +324,115 @@ public class Main {
             //
 
         }
-        
-        
-        final File folder2 = new File(FILE_PATH4);
-        listFilesForFolder(folder2);
+         
         
         
         
         
         
         //Gets the Source_Paths
-        
+        /*
         for (int i=0; i<Source_Paths.size();i++)
+        {
+            
+            CompilationUnit cu3 = StaticJavaParser.parse(new File(Source_Paths.get(i)));
+            System.out.println(cu3);
+            
+            VoidVisitor<Void> methodNameVisitor = new MethodNamePrinter();
+            methodNameVisitor.visit(cu, null);
+            
+            
+        }
+        count();*/
+        
+        
+        
+       
+        
+       
+       CombinedTypeSolver combinedTypeSolver = new CombinedTypeSolver();
+        //combinedTypeSolver.add(new JavaParserTypeSolver(new File("C:\Users\mario\Desktop\JavaCodeMetricsCalculator-src_code_analyzer")));
+        //combinedTypeSolver.add(new ReflectionTypeSolver());
+        ParserConfiguration parserConfiguration = new ParserConfiguration().setSymbolResolver(new JavaSymbolSolver(combinedTypeSolver));
+        ProjectRoot projectRoot = new SymbolSolverCollectionStrategy(parserConfiguration).collect(Path.of("C:\\Netbeans_Project\\Ptyxiaki\\target\\lib\\sources"));
+
+        for (SourceRoot sourceRoot : projectRoot.getSourceRoots()) {
+    try {
+        sourceRoot.tryToParse();
+        List<CompilationUnit> compilationUnits = sourceRoot.getCompilationUnits();
+        System.out.println(compilationUnits);
+    } catch (IOException e) {
+        e.printStackTrace();
+        return;
+    }
+        }
+        
+        
+     /*   
+        
+      try {
+            // create class object
+            Class classobj = Main.class;
+  
+            // get list of methods
+            Method[] methods = classobj.getDeclaredMethods();
+  
+            // get the name of every method present in the list
+            for (Method method : methods) {
+  
+                String MethodName = method.getName();
+                System.out.println("Name of the method: "
+                                   + MethodName);
+            }
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+            */
+     
+     
+     /*
+     System.out.println("EDWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW");
+     
+    // getAllMethodsInHierarchy(Main.class);
+     
+     
+     
+     
+     
+     Method[] marios = getAllMethodsInHierarchy(Main.class);
+     for(int i = 0;i<marios.length;i++)
+     {
+         System.out.println(marios[i].getName());
+     }*/
+     
+     
+     FileInputStream in = new FileInputStream("C:\\Netbeans_Project\\Ptyxiaki\\src\\main\\java\\com\\mycompany\\ptyxiaki\\Main.java");
+
+        CompilationUnit cu5;
+        try
+        {
+            cu5 = StaticJavaParser.parse(in);
+        }
+        finally
+        {
+            in.close();
+        }
+        new MethodVisitor().visit(cu5, null);
+        ArrayList<String>
+            newList=removeDuplicates(arm);
+        int sum=0;
+        for(int o=0; o<newList.size(); o++){
+            System.out.println(newList.get(o));
+            sum=o;
+        }
+     
+        
+        final File folder2 = new File(FILE_PATH4);
+        listFilesForFolder(folder2);
+        
+        
+         for (int i=0; i<Source_Paths.size();i++)
         {
             
             CompilationUnit cu3 = StaticJavaParser.parse(new File(Source_Paths.get(i)));
@@ -276,15 +443,13 @@ public class Main {
             
             
         }
-        count();
+        double AllMethodsCounter = count();
         
         
+        double PLMI = (newList.size()/AllMethodsCounter)*100;
         
-        
-        
-        
-        
-              
+        System.out.println("The Percentage of Library Methods Invoked is: "+PLMI + " %");
+     
     }
     
 }
